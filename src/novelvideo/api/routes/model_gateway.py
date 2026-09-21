@@ -173,6 +173,10 @@ class MediaRelayConfigBody(BaseModel):
     cloudinary_api_key: str | None = Field(default=None, alias="apiKey")
     cloudinary_api_secret: str | None = Field(default=None, alias="apiSecret")
     cloudinary_folder: str | None = Field(default=None, alias="apiFolder")
+    s3_region: str | None = Field(default=None, alias="s3Region")
+    s3_bucket: str | None = Field(default=None, alias="s3Bucket")
+    s3_access_key_id: str | None = Field(default=None, alias="s3AccessKeyId")
+    s3_access_key_secret: str | None = Field(default=None, alias="s3AccessKeySecret")
 
 
 class NewApiDatabaseBody(BaseModel):
@@ -656,7 +660,7 @@ async def save_media_relay_settings(body: MediaRelayConfigBody) -> dict[str, Any
     except PermissionError as exc:
         raise _permission_error(exc) from exc
     provider = body.provider.strip().lower()
-    if provider not in {"aliyun_oss", "cloudinary"}:
+    if provider not in {"aliyun_oss", "cloudinary", "aws_s3"}:
         raise HTTPException(status_code=400, detail="unsupported media relay provider")
     if body.ttl_seconds <= 0:
         raise HTTPException(status_code=400, detail="ttlSeconds must be positive")
@@ -697,7 +701,26 @@ async def save_media_relay_settings(body: MediaRelayConfigBody) -> dict[str, Any
     cloudinary_folder = merge_field(
         body.cloudinary_folder, current.cloudinary_folder
     ).strip("/")
-    if provider == "cloudinary":
+    s3_region = merge_field(body.s3_region, current.s3_region)
+    s3_bucket = merge_field(body.s3_bucket, current.s3_bucket)
+    s3_access_key_id = merge_field(
+        body.s3_access_key_id, current.s3_access_key_id, secret=True
+    )
+    s3_access_key_secret = merge_field(
+        body.s3_access_key_secret, current.s3_access_key_secret, secret=True
+    )
+    if provider == "aws_s3":
+        if body.ttl_seconds > 604800:
+            raise HTTPException(
+                status_code=400, detail="S3 ttlSeconds must be at most 604800 (7 days)"
+            )
+        required = {
+            "s3Region": s3_region,
+            "s3Bucket": s3_bucket,
+            "s3AccessKeyId": s3_access_key_id,
+            "s3AccessKeySecret": s3_access_key_secret,
+        }
+    elif provider == "cloudinary":
         required = {
             "cloudName": cloud_name,
             "apiKey": cloudinary_api_key,
@@ -726,6 +749,10 @@ async def save_media_relay_settings(body: MediaRelayConfigBody) -> dict[str, Any
         cloudinary_api_key=cloudinary_api_key,
         cloudinary_api_secret=cloudinary_api_secret,
         cloudinary_folder=cloudinary_folder,
+        s3_region=s3_region,
+        s3_bucket=s3_bucket,
+        s3_access_key_id=s3_access_key_id,
+        s3_access_key_secret=s3_access_key_secret,
     )
     return {"ok": True, "data": _media_relay_status()}
 

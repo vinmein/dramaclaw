@@ -849,6 +849,10 @@ async def generate_freezone_audio_eleven_music(
     clean_prompt = str(prompt or "").strip()
     if not clean_prompt:
         raise ValueError("prompt is required")
+    if not force_instrumental:
+        from novelvideo.utils.generation_language import media_language_instruction
+
+        clean_prompt = "\n".join(filter(None, [clean_prompt, media_language_instruction()]))
     length = int(music_length_ms or 0)
     if length < 3_000 or length > 600_000:
         raise ValueError("music_length_ms must be between 3000 and 600000")

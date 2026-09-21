@@ -74,7 +74,7 @@ Output the motion prompt directly. No explanation. No markdown.
 """
 
 
-def create_video_prompt_builder_agent(language: str = "zh") -> Agent:
+def create_video_prompt_builder_agent(language: str = "en") -> Agent:
     """创建视频提示词生成 Agent。"""
     from novelvideo.config import get_superpower_pydantic_model
 
@@ -115,7 +115,7 @@ class VideoPromptBuilder:
         """返回上一次生成视频提示词时使用的上下文。"""
         return self._last_context
 
-    def _get_agent(self, language: str = "zh") -> Agent:
+    def _get_agent(self, language: str = "en") -> Agent:
         """获取指定语言的 Agent（懒加载）。"""
         if language not in self._agents:
             self._agents[language] = create_video_prompt_builder_agent(language)
@@ -153,7 +153,7 @@ class VideoPromptBuilder:
         self,
         duration: float = 5.0,
         frame_prompt: str = "",
-        language: str = "zh",
+        language: str = "en",
         frame_image_path: Optional[str] = None,
         beat_number: int | None = None,
         episode_number: int | None = None,
@@ -398,7 +398,7 @@ Output the motion prompt in {output_label} directly. No explanation.
     def _fallback_build(
         self,
         duration: float,
-        language: str = "zh",
+        language: str = "en",
     ) -> str:
         """回退方案：根据规则生成默认运动提示词。"""
         if language == "en":

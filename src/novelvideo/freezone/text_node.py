@@ -75,7 +75,7 @@ You create polished, creator-ready text from a user's instruction.
 
 ## Goal
 - Write the requested story, scene, character setting, dialogue, outline, or creative prompt.
-- Follow the user's requested language, structure, tone, length, and formatting.
+- Write stories, dialogue, narration and creative prompts in English. Follow the requested structure, tone, length and formatting.
 - Make the result concrete and directly usable in a creative workflow.
 
 ## Rules
@@ -87,77 +87,66 @@ You create polished, creator-ready text from a user's instruction.
 
 FREEZONE_STORY_SCRIPT_SYSTEM_PROMPT = """# Freezone Story Script Generator
 
-You generate a structured story-script table from an uploaded script excerpt.
-
-## Goal
-- Turn the source script into a complete, production-oriented story script.
-- Output rows that are directly usable by downstream image and video nodes.
-- Keep the result cinematic, concrete, and structured.
+Create a production-ready story-script table from the supplied script, idea or reference.
+Write all generated prose in English, including the title, dialogue, sound descriptions,
+shot prompts and video motion prompts. Preserve supplied proper names and technical IDs.
 
 ## Requirements
-1. Break the story into clear numbered shots with sequential `shot_no`, starting from 1.
-2. Each row must include all schema fields. Do not omit fields.
-3. Prefer concrete visual language over vague abstraction. Every shot should feel filmable.
-4. Dialogue should be short and only present when appropriate. If no dialogue is needed, output `无`.
-5. If a field has no meaningful content, prefer `无` instead of vague placeholders.
-6. Keep all fields in Simplified Chinese except technical tokens when naturally needed.
-7. Output only structured data matching the schema. Do not wrap with markdown.
+1. Number shots sequentially from 1. Include every schema field.
+2. Describe concrete, filmable actions; preserve story logic and character continuity.
+3. Write short English dialogue when appropriate. Use `None` for absent dialogue or
+   other inapplicable prose fields. Keep asset URL fields empty as described below.
+4. Output only structured data matching the schema, without Markdown fences.
+5. Prefer short cinematic shots, usually 2–5 seconds, with natural pacing.
+6. Keep `character_1` and `character_2` identifiers consistent across rows. Describe
+   each visible character in the corresponding character_description field.
+7. Use concise English shot terminology, such as `Close-up / eye level`,
+   `Medium shot / low angle`, or `Wide shot / high angle`.
+8. Write specific, compact emotion, scene, lighting and sound descriptions.
+9. When generating dialogue or narration for video, request spoken English. Do not
+   add subtitles or visible text unless the user requests them; requested text is English.
 
-## Table style target
-- The result should resemble a production storyboard table, not a prose summary.
-- `visual_description` should describe one clear beat of action or state, usually in one concise sentence.
-- `shot` should use concise combinations like `近景 / 特写`, `中景 / 仰视`, `全景 / 俯视远景`.
-- `emotion` should be compact and specific, often 2-3 short phrases joined by `、`.
-- `scene_tags`, `lighting_mood`, `sound` should all be concrete and film-facing.
-- `character_1` should prefer a stable role identifier if inferable, such as `沈昭昭_现代` or `沈昭昭_古装`.
-- `character_description_1` should prefer bracketed character-card format, e.g. `[沈昭昭_现代: 28岁女性，面色苍白，神情疲惫，身穿现代简约职业装……]`.
+## Image prompt format
+Write `shot_prompt` as eight descriptive bracketed sections joined with ` + `:
+1. [Composition: framing, camera position, angle and composition]
+2. [Character / subject: reuse the character card and describe visible appearance]
+3. [Spatial relationships: foreground, midground, background and interactions]
+4. [Visible detail: eyes, mouth, posture, clothing, injuries and other visible state]
+5. [Environment and props: specific setting and relevant foreground/background objects]
+6. [Lighting and atmosphere: direction, color temperature, shadows, fog and rim light]
+7. [Visual style: the requested cinematic or illustrative treatment]
+8. [Camera settings: lens, aperture, depth of field, motion rendering and grain]
 
-## Duration guidance
-- Default to short cinematic shots.
-- Most rows should fall in the 2-5 second range unless the source clearly calls for a longer beat.
-- Keep the pacing readable and dramatic rather than mechanically uniform.
+Example:
+[Composition: eye-level close-up] + [Character: Alex, an exhausted adult in a dark jacket]
++ [Spatial relationships: seated alone at a desk, monitor to the left]
++ [Visible detail: trembling fingers and unfocused eyes]
++ [Environment and props: late-night office, scattered papers, cold coffee]
++ [Lighting: cool monitor light, soft shadows]
++ [Visual style: realistic cinematic suspense] + [Camera settings: 85mm, f/1.8, shallow depth of field]
 
-## Prompt formatting rules
-`shot_prompt` must be image-generation friendly and must be written as a chained bracket structure using ` + ` separators.
+## Video motion prompt format
+Write `video_motion_prompt` as six bracketed sections joined with ` + `:
+1. [Camera movement: direction, speed, strength and stability]
+2. [Subject action: specific physical movements or changes]
+3. [Environmental motion: wind, clothing, dust, rain, flickering light, etc.]
+4. [Sound: ambience, footsteps, breathing, objects and other appropriate sounds]
+5. [Dialogue: exact English lines, speaker and delivery; use None when absent]
+6. [Duration: 4.0s]
 
-Preferred order for `shot_prompt`:
-1. `[画面构图：景别、机位、视角、构图关系]`
-2. `[角色卡/主体描述：如果存在角色1，尽量直接复用或轻改 character_description_1 的角色卡格式；如果没有角色，则写主体/核心对象描述]`
-3. `[主体/人物空间与互动关系：谁在前景、谁在中景、谁与什么环境或道具发生关系]`
-4. `[极具体的微表情、主体状态或关键视觉信息：必须具体到眼神、嘴角、肢体紧张度、服饰状态、伤痕、汗水、血迹、视线方向等可见细节]`
-5. `[明确的场景环境元素与前景/背景道具：办公室、宫殿、屏风、龙椅、电脑蓝光、飞尘、门缝光等]`
-6. `[光影几何与大气效果：主光方向、冷暖色温、边缘光、雾气、逆光、顶光、体积光等]`
-7. `[视觉风格/质感：写实电影感、纪实感、压抑冷感、盛唐史诗感等]`
-8. `[技术参数：镜头焦段、光圈、景深、快门感、颗粒或解析度特征；这一段尽量不要省略]`
+Example:
+[Camera movement: very slow, steady push-in]
++ [Subject action: Alex looks up, eyes widening, fingers stopping on the desk]
++ [Environmental motion: paper edges stir in the air conditioning]
++ [Sound: keyboard stops, a distant phone vibrates]
++ [Dialogue: Alex says in English, quietly, "Someone is here."] + [Duration: 4.0s]
 
-Example style for `shot_prompt`:
-- `[画面构图：近景特写，平视机位] + [角色卡/主体描述：[沈昭昭_现代: 28岁女性，面色苍白，神情疲惫，身穿现代简约职业装]] + [主体/人物空间与互动关系：她独坐在办公桌前，电脑屏幕蓝光从侧前方打亮面部] + [极具体的微表情、主体状态或关键视觉信息：眼下发青，手指微颤，视线涣散，嘴唇微张] + [明确的场景环境元素与前景/背景道具：深夜办公室、电脑蓝光、散乱文件、冷掉的咖啡杯] + [光影几何与大气效果：冷蓝主调，屏幕侧光压住面部阴影，背景轻微灰雾感] + [视觉风格/质感：都市悬疑写实电影感] + [技术参数：85mm镜头，f/1.8，浅景深]`
-
-`video_motion_prompt` must focus on motion and should also use a chained bracket structure.
-
-Preferred order for `video_motion_prompt`:
-1. `[明确的摄影机运镜轨迹与速度：必须写清推/拉/摇/移/跟/升/降/手持，以及快慢、力度和稳定性]`
-2. `[主体极其具体的物理动作细节或状态变化：必须写清人物或主体具体怎么动，不要只写“情绪变化”]`
-3. `[环境物理动态：风、雨、衣角、尘土、门帘、屏幕闪烁、火光、飞雪等]`
-4. `[音效与氛围描述：环境声、器物声、呼吸声、脚步声、雷声等]`
-5. `[对话台词与语气：有对白写具体台词与语气，没有就写无]`
-6. `[时长：4.0s]`
-
-Example style for `video_motion_prompt`:
-- `[明确的摄影机运镜轨迹与速度：极慢速推进，镜头几乎贴着人物面部向前压近，稳定中带轻微呼吸感] + [主体极其具体的物理动作细节或状态变化：沈昭昭先是眼神失焦，随后瞳孔微缩，指尖在桌面轻轻抽动，喉结压抑地滚动一下] + [环境物理动态：屏幕冷光轻微闪烁，纸张边缘被空调风吹起，咖啡表面微微晃动] + [音效与氛围描述：急促的键盘声、连续的手机提示音、室内低频电流声] + [对话台词与语气：无] + [时长：4.0s]`
-
-## Quality bar
-- Avoid generic outputs like `人物站着`, `镜头推进`, `情绪复杂`.
-- Prefer highly specific physical action, facial detail, scene detail, and camera-language wording.
-- Preserve story logic and character-state progression across rows.
-
-## Asset fields you must NOT invent
-- `character_image_1`, `character_image_2`, `reference` are asset URL slots filled in by the
-  backend after generation. Always output them as an empty string.
-- Never write `无`, a file name, or a made-up URL into those three fields.
-- When two distinct characters appear in one shot, fill `character_2` /
-  `character_description_2` the same way as `character_1` / `character_description_1`.
-  Reuse the exact same character identifier across rows so the same person keeps one name.
+## Quality and asset binding
+- Avoid generic phrases such as "a person stands", "camera moves", or "complex emotions".
+- Do not copy example characters or settings into unrelated stories.
+- Always output empty strings for `character_image_1`, `character_image_2`, and
+  `reference`: the backend fills these URL slots. Never invent URLs or file names.
+- Preserve character identifiers exactly so reference images can be attached.
 """
 
 FREEZONE_VIDEO_STORY_SCRIPT_SYSTEM_PROMPT = FREEZONE_STORY_SCRIPT_SYSTEM_PROMPT + """
@@ -411,30 +400,32 @@ async def generate_freezone_text(
 
 
 _STORY_SCRIPT_COMMON_RULES = (
-    "输出字段必须覆盖：镜号、时长、画面描述、角色1、角色描述1、角色图1、角色2、角色描述2、"
-    "角色图2、参考、景别、角色动作、情绪、场景标签、光影氛围、音效、对白、分镜提示词、视频运动提示词。",
-    "如果用户给了额外要求，也必须一起遵守。",
-    "请严格按照影视制片表格思路输出，不要输出散文摘要。",
-    "请让分镜提示词和视频运动提示词都采用括号分段 + 号连接的格式。",
-    "缺失对白时写 `无`。",
-    "角色图1、角色图2、参考三个字段一律输出空字符串——它们由后端回填素材 URL，"
-    "不要写 `无`，也不要编造文件名或链接。",
-    "分镜提示词必须像高质量图像生成提示词，视频运动提示词必须像高质量视频运动提示词，而不是简单一句概括。",
+    "Include every field: shot number, duration, visual description, both characters and descriptions, "
+    "character images, reference, shot type, action, emotion, scene tags, lighting, sound, dialogue, "
+    "shot prompt and video motion prompt.",
+    "Write every generated prose field in English. Write dialogue and narration in English; "
+    "video prompts must request spoken English whenever speech is present.",
+    "Follow the user's additional creative requirements.",
+    "Output a film-production table, not a prose summary.",
+    "Use bracketed sections joined with + for image and video prompts.",
+    "Use `None` when dialogue is absent.",
+    "Always leave character_image_1, character_image_2 and reference empty; the backend fills "
+    "asset URLs. Never invent a URL or filename.",
+    "Make image and video prompts detailed enough for generation, not one-line summaries.",
 )
 
 _STORY_SCRIPT_STYLE_HINT = (
-    "参考风格要点：\n"
-    "- 镜号连续递增\n"
-    "- 时长大多 2-5 秒\n"
-    "- 景别写法类似 `近景 / 特写`、`中景 / 仰视`\n"
-    "- 角色描述尽量写成 `[角色ID: ...]` 形式\n"
-    "- 同一个人物在所有行里必须用完全一致的角色名，方便回填角色参考图\n"
-    "- 一镜里出现两个角色时，第二个填进角色2 / 角色描述2\n"
-    "- 分镜提示词最好严格按 8 段写：构图、角色卡/主体描述、空间关系、微表情/状态、环境与道具、光影几何、视觉风格、技术参数\n"
-    "- 如果存在角色1，分镜提示词第二段尽量直接使用或轻改角色描述1，不要换成模糊代称\n"
-    "- 分镜提示词中的技术参数段尽量保留，不要省略\n"
-    "- 视频运动提示词最好严格按 6 段写：运镜轨迹、主体动作、环境动态、音效氛围、对白语气、时长\n"
-    "- 视频运动提示词里的主体动作必须是可见物理动作，不要只写情绪变化"
+    "Style guidance:\n"
+    "- Sequential shot numbers; most shots last 2–5 seconds.\n"
+    "- Use English shot labels such as Close-up / eye level or Medium shot / low angle.\n"
+    "- Format character cards as [CharacterID: description]; keep identifiers consistent.\n"
+    "- Fill the second character fields when two characters appear.\n"
+    "- Image prompts use eight sections: composition, character/subject, spatial relationships, "
+    "visible detail, environment/props, lighting, style and camera settings.\n"
+    "- Reuse the character card in the subject section; retain camera settings.\n"
+    "- Video prompts use six sections: camera movement, subject action, environmental motion, "
+    "sound, English dialogue/delivery and duration.\n"
+    "- Describe visible physical actions rather than abstract emotional changes."
 )
 
 

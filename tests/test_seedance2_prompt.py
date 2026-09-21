@@ -829,10 +829,12 @@ def test_seedance2_english_draft_uses_english_prose_and_keeps_reference_tokens()
     ],
 )
 def test_seedance2_language_uses_script_fields_and_ignores_generated_prompt(
-    beat, expected
+    beat, expected, monkeypatch
 ):
     import novelvideo.seedance2_i2v.prompt as prompt_module
 
+    # Source inference remains available through the explicit auto mode.
+    monkeypatch.setenv("GENERATION_LANGUAGE", "auto")
     assert prompt_module.detect_seedance2_prompt_language(beat) == expected
 
 

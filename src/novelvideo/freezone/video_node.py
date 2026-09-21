@@ -437,6 +437,9 @@ def build_freezone_video_prompt(
     parts.append(
         "输出要求：生成单条连贯视频镜头，动作自然，运动平滑，避免闪烁、变形、跳帧和主体身份漂移。"
     )
+    from novelvideo.utils.generation_language import media_language_instruction
+
+    parts.append(media_language_instruction())
     return "\n".join(part for part in parts if part)
 
 
@@ -473,6 +476,9 @@ def build_freezone_image_to_video_prompt(
     parts.append(
         "输出要求：生成单条连贯视频镜头，动作自然，运动平滑，避免闪烁、变形、跳帧和主体身份漂移。"
     )
+    from novelvideo.utils.generation_language import media_language_instruction
+
+    parts.append(media_language_instruction())
     return "\n".join(part for part in parts if part)
 
 
@@ -513,6 +519,9 @@ def build_freezone_keyframe_video_prompt(
     parts.append(
         "输出要求：生成单条连贯视频镜头，动作自然，运动平滑，避免闪烁、变形、跳帧、主体身份漂移和首尾帧跳变。"
     )
+    from novelvideo.utils.generation_language import media_language_instruction
+
+    parts.append(media_language_instruction())
     return "\n".join(part for part in parts if part)
 
 
@@ -555,6 +564,9 @@ def build_freezone_omni_video_prompt(
     parts.append(
         "输出要求：生成单条连贯视频镜头，动作自然，运动平滑，避免闪烁、变形、跳帧和主体身份漂移。"
     )
+    from novelvideo.utils.generation_language import media_language_instruction
+
+    parts.append(media_language_instruction())
     return "\n".join(part for part in parts if part)
 
 

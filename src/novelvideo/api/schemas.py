@@ -184,7 +184,7 @@ class Seedance2PromptGenerateRequest(BaseModel):
 
 
 class BeatVideoPromptGenerateRequest(BaseModel):
-    language: str = "zh"
+    language: str = "en"
 
 
 class Seedance2AssetDeleteRequest(BaseModel):
@@ -1766,43 +1766,43 @@ class FreezoneStoryScriptGenerateRequest(BaseModel):
 
 
 class FreezoneStoryScriptRow(BaseModel):
-    shot_no: int = Field(description="镜号")
-    duration: int = Field(description="时长，单位秒")
-    visual_description: str = Field(description="画面描述")
-    character_1: str = Field(default="", description="角色1")
-    character_description_1: str = Field(default="", description="角色描述1")
+    shot_no: int = Field(description="Shot number")
+    duration: int = Field(description="Duration in seconds")
+    visual_description: str = Field(description="Visual description in English")
+    character_1: str = Field(default="", description="Character 1")
+    character_description_1: str = Field(default="", description="Character 1 description in English")
     character_image_1: str = Field(
         default="",
-        description="角色图1 URL；模型留空，由后端按角色名匹配 character_refs 回填",
+        description="Character 1 image URL: leave empty for backend asset binding",
     )
-    character_2: str = Field(default="", description="角色2")
-    character_description_2: str = Field(default="", description="角色描述2")
+    character_2: str = Field(default="", description="Character 2")
+    character_description_2: str = Field(default="", description="Character 2 description in English")
     character_image_2: str = Field(
         default="",
-        description="角色图2 URL；模型留空，由后端按角色名匹配 character_refs 回填",
+        description="Character 2 image URL: leave empty for backend asset binding",
     )
     reference: str = Field(
         default="",
-        description="参考图 URL；模型留空，由后端按 keyframe_index 回填对应关键帧",
+        description="Reference image URL: leave empty for backend keyframe binding",
     )
     keyframe_index: int = Field(
         default=0,
-        description="视频参考模式下，这一镜对应的输入关键帧序号（1-based，0 表示无）",
+        description="Input keyframe index for video references (1-based; 0 means none)",
     )
-    shot: str = Field(default="", description="景别")
-    character_action: str = Field(default="", description="角色动作")
-    emotion: str = Field(default="", description="情绪")
-    scene_tags: str = Field(default="", description="场景标签")
-    lighting_mood: str = Field(default="", description="光影氛围")
-    sound: str = Field(default="", description="音效")
-    dialogue: str = Field(default="", description="对白")
-    shot_prompt: str = Field(default="", description="分镜提示词")
-    video_motion_prompt: str = Field(default="", description="视频运动提示词")
+    shot: str = Field(default="", description="Shot framing in English")
+    character_action: str = Field(default="", description="Character action in English")
+    emotion: str = Field(default="", description="Emotion in English")
+    scene_tags: str = Field(default="", description="Scene tags in English")
+    lighting_mood: str = Field(default="", description="Lighting and atmosphere in English")
+    sound: str = Field(default="", description="Sound effects in English")
+    dialogue: str = Field(default="", description="Spoken dialogue in English")
+    shot_prompt: str = Field(default="", description="Image prompt in English")
+    video_motion_prompt: str = Field(default="", description="Video motion prompt in English, with spoken English dialogue if present")
 
 
 class FreezoneStoryScriptGenerateData(BaseModel):
-    title: str = Field(default="", description="故事脚本标题")
-    rows: list[FreezoneStoryScriptRow] = Field(default_factory=list, description="结构化故事脚本行")
+    title: str = Field(default="", description="Story title in English")
+    rows: list[FreezoneStoryScriptRow] = Field(default_factory=list, description="Structured story-script rows")
 
 
 class FreezoneStoryScriptGenerateResponse(BaseModel):

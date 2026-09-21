@@ -96,6 +96,14 @@ def detect_asset_language(text: str) -> AssetLanguage:
     return "zh"
 
 
+def resolve_asset_language(text: str = "") -> AssetLanguage:
+    """Use the configured output language, with source detection in auto mode."""
+    from novelvideo.utils.generation_language import generation_language
+
+    language = generation_language()
+    return detect_asset_language(text) if language == "auto" else language
+
+
 def asset_language_instruction(language: AssetLanguage) -> str:
     """Return the shared language rule appended to model requests."""
     if language == "en":
@@ -132,7 +140,7 @@ async def detect_episode_asset_language(
 
             content = await load_episode_planning_content(store, episode)
             if content.strip():
-                return detect_asset_language(content)
+                return resolve_asset_language(content)
 
     for candidate_store in (content_store, store):
         loader = getattr(candidate_store, "load_working_content", None)
@@ -142,6 +150,6 @@ async def detect_episode_asset_language(
         if inspect.isawaitable(content):
             content = await content
         if str(content or "").strip():
-            return detect_asset_language(str(content))
+            return resolve_asset_language(str(content))
 
-    return detect_asset_language(fallback_text)
+    return resolve_asset_language(fallback_text)

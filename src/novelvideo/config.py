@@ -216,20 +216,27 @@ def _newapi_text_openai_model(
     base_url: str,
     timeout_seconds: float,
     profile: Any,
+    output_language_policy: bool = True,
 ):
     from contextlib import asynccontextmanager
 
     from pydantic_ai.models.openai import OpenAIChatModel
 
+    from novelvideo.utils.generation_language import apply_generation_language
+
     class _AutoClosingOpenAIChatModel(OpenAIChatModel):
-        async def request(self, *args: Any, **kwargs: Any) -> Any:
+        async def request(self, messages, *args: Any, **kwargs: Any) -> Any:
+            if output_language_policy:
+                messages = apply_generation_language(messages)
             async with self:
-                return await super().request(*args, **kwargs)
+                return await super().request(messages, *args, **kwargs)
 
         @asynccontextmanager
-        async def request_stream(self, *args: Any, **kwargs: Any):
+        async def request_stream(self, messages, *args: Any, **kwargs: Any):
+            if output_language_policy:
+                messages = apply_generation_language(messages)
             async with self:
-                async with super().request_stream(*args, **kwargs) as response:
+                async with super().request_stream(messages, *args, **kwargs) as response:
                     yield response
 
     return _AutoClosingOpenAIChatModel(
@@ -264,6 +271,12 @@ def get_newapi_text_pydantic_model(
         )
     )
     profile = _get_newapi_text_model_profile(model_name)
+    from functools import partial
+
+    model_factory = partial(
+        _newapi_text_openai_model,
+        output_language_policy=model_env != "FREEZONE_TRANSLATION_MODEL",
+    )
     if not is_ce_effective():
         from novelvideo.model_gateway_runtime import (
             create_request_scoped_gateway_model,
@@ -274,7 +287,7 @@ def get_newapi_text_pydantic_model(
             capability=capability,
             timeout_seconds=timeout_seconds,
             profile=profile,
-            delegate_factory=_newapi_text_openai_model,
+            delegate_factory=model_factory,
             platform_credential_factory=lambda: get_newapi_runtime_credentials(
                 env_api_key="MODEL_API_KEY",
                 env_base_url="MODEL_BASE_URL",
@@ -287,7 +300,7 @@ def get_newapi_text_pydantic_model(
     )
     if not api_key:
         raise ValueError("API key not set. Configure DramaClawAPI credentials.")
-    return _newapi_text_openai_model(
+    return model_factory(
         model_name,
         api_key=api_key,
         base_url=base_url,
@@ -662,7 +675,7 @@ def get_character_image_model() -> str:
 # =============================================================================
 
 TTS_PROVIDER = os.environ.get("TTS_PROVIDER", "cosyvoice")  # 默认 CosyVoice
-EDGE_TTS_VOICE = os.environ.get("EDGE_TTS_VOICE", "zh-CN-XiaoxiaoNeural")
+EDGE_TTS_VOICE = os.environ.get("EDGE_TTS_VOICE", "en-US-JennyNeural")
 VOLCENGINE_TTS_ENDPOINT = os.environ.get(
     "VOLCENGINE_TTS_ENDPOINT", "https://openspeech.bytedance.com/api/v1/tts"
 )

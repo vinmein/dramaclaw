@@ -182,6 +182,91 @@ class AliyunOSSRelay:
         )
 
 
+class S3Relay:
+    """Upload to a private AWS S3 bucket and return a signed GET URL."""
+
+    def __init__(
+        self,
+        *,
+        region: str,
+        bucket_name: str,
+        access_key_id: str,
+        access_key_secret: str,
+    ) -> None:
+        if not all(
+            str(v or "").strip()
+            for v in (region, bucket_name, access_key_id, access_key_secret)
+        ):
+            raise MediaRelayConfigError(
+                "AWS S3 requires region, bucket, access key ID and secret access key"
+            )
+        import boto3
+        from botocore.config import Config
+
+        self._bucket_name = bucket_name.strip()
+        self._client = boto3.client(
+            "s3",
+            region_name=region.strip(),
+            aws_access_key_id=access_key_id.strip(),
+            aws_secret_access_key=access_key_secret.strip(),
+            config=Config(
+                signature_version="s3v4",
+                connect_timeout=10,
+                read_timeout=60,
+                retries={"max_attempts": 3},
+                s3={"addressing_style": "virtual"},
+            ),
+        )
+
+    def upload_bytes(
+        self,
+        data: bytes,
+        *,
+        ext: str = "png",
+        ttl: int = 1800,
+        resource_type: str = "image",
+        object_key: str | None = None,
+    ) -> str:
+        if not data:
+            raise ValueError("cannot relay empty media bytes")
+        if not 1 <= int(ttl) <= 604800:
+            raise ValueError("S3 URL lifetime must be between 1 and 604800 seconds")
+        ext = _normalize_ext(ext)
+        key = (
+            object_key
+            or f"relay/{datetime.now(timezone.utc):%Y%m%d}/{uuid.uuid4().hex}.{ext}"
+        )
+        if not _is_safe_object_key(key):
+            raise ServiceEgressDenied("object-key")
+        from botocore.exceptions import BotoCoreError, ClientError
+
+        try:
+            self._client.put_object(
+                Bucket=self._bucket_name,
+                Key=key,
+                Body=data,
+                ContentType=mimetypes.types_map.get(
+                    f".{ext}", "application/octet-stream"
+                ),
+            )
+            return self._client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self._bucket_name, "Key": key},
+                ExpiresIn=int(ttl),
+                HttpMethod="GET",
+            )
+        except (BotoCoreError, ClientError):
+            raise MediaRelayConfigError(
+                "AWS S3 upload failed. Check the bucket, region, credentials and PutObject/GetObject permissions."
+            ) from None
+
+    def upload_file(self, path: str | Path, *, ttl: int = 1800) -> str:
+        file_path = Path(path)
+        return self.upload_bytes(
+            file_path.read_bytes(), ext=file_path.suffix.lstrip(".") or "png", ttl=ttl
+        )
+
+
 class CloudinaryRelay:
     """Upload transient bytes to Cloudinary and return its secure delivery URL."""
 
@@ -277,7 +362,7 @@ class CloudinaryRelay:
         )
 
 
-def get_media_relay() -> AliyunOSSRelay | CloudinaryRelay:
+def get_media_relay() -> AliyunOSSRelay | CloudinaryRelay | S3Relay:
     """Build the configured media relay.
 
     The relay is intentionally not cached so tests can monkeypatch config and
@@ -299,6 +384,13 @@ def get_media_relay() -> AliyunOSSRelay | CloudinaryRelay:
         env_cloudinary_folder=getattr(config, "CLOUDINARY_RELAY_FOLDER", ""),
     )
     provider = relay_config.provider
+    if provider == "aws_s3":
+        return S3Relay(
+            region=relay_config.s3_region,
+            bucket_name=relay_config.s3_bucket,
+            access_key_id=relay_config.s3_access_key_id,
+            access_key_secret=relay_config.s3_access_key_secret,
+        )
     if provider == "cloudinary":
         return CloudinaryRelay(
             cloud_name=relay_config.cloud_name,

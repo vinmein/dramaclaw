@@ -101,6 +101,10 @@ export interface ModelGatewayProvisionerConfig {
 }
 
 export interface MediaRelayConfig {
+  s3Region?: string;
+  s3Bucket?: string;
+  s3AccessKeyIdPreview?: string;
+  s3AccessKeySecretPreview?: string;
   source: string;
   provider: string;
   ttlSeconds: number;
@@ -235,7 +239,11 @@ export interface SaveEmbeddingModelInput {
 }
 
 export interface SaveMediaRelayConfigInput {
-  provider: "aliyun_oss" | "cloudinary";
+  s3Region?: string;
+  s3Bucket?: string;
+  s3AccessKeyId?: string;
+  s3AccessKeySecret?: string;
+  provider: "aliyun_oss" | "cloudinary" | "aws_s3";
   ttlSeconds: number;
   endpoint?: string;
   bucket?: string;

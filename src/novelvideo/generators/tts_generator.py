@@ -159,7 +159,7 @@ class TTSParams(BaseModel):
     """TTS 参数。"""
 
     text: str
-    voice: str = "zh-CN-XiaoxiaoNeural"
+    voice: str = "en-US-JennyNeural"
     rate: str = "+0%"
     pitch: str = "+0Hz"
     volume: str = "+0%"
@@ -235,7 +235,7 @@ class EdgeTTSGenerator:
             self.rate = rate or config["rate"]
             self.pitch = pitch or config["pitch"]
         else:
-            self.voice = voice or "zh-CN-XiaoxiaoNeural"
+            self.voice = voice or "en-US-JennyNeural"
             self.rate = rate or "+0%"
             self.pitch = pitch or "+0Hz"
 
@@ -415,7 +415,7 @@ class EdgeTTSGenerator:
 
         return results
 
-    async def list_voices(self, locale: str = "zh-CN") -> list[VoiceInfo]:
+    async def list_voices(self, locale: str = "en-US") -> list[VoiceInfo]:
         """列出可用语音。
 
         Args:
@@ -838,13 +838,13 @@ def get_voice_by_style(style: str) -> str:
         语音名称
     """
     style_mapping = {
-        "narrator": "zh-CN-YunjianNeural",  # 解说风格
-        "storyteller": "zh-CN-XiaoxiaoNeural",  # 讲故事风格
-        "news": "zh-CN-YunyangNeural",  # 新闻播报风格
-        "child": "zh-CN-XiaoruiNeural",  # 儿童风格
-        "gentle": "zh-CN-XiaoyiNeural",  # 温柔风格
-        "mature_female": "zh-CN-XiaomoNeural",  # 成熟女声
-        "mature_male": "zh-CN-YunxiNeural",  # 成熟男声
+        "narrator": "en-US-GuyNeural",  # 解说风格
+        "storyteller": "en-US-JennyNeural",  # 讲故事风格
+        "news": "en-US-GuyNeural",  # 新闻播报风格
+        "child": "en-US-AnaNeural",  # 儿童风格
+        "gentle": "en-US-AriaNeural",  # 温柔风格
+        "mature_female": "en-US-AriaNeural",  # 成熟女声
+        "mature_male": "en-US-GuyNeural",  # 成熟男声
     }
 
-    return style_mapping.get(style, "zh-CN-XiaoxiaoNeural")
+    return style_mapping.get(style, "en-US-JennyNeural")

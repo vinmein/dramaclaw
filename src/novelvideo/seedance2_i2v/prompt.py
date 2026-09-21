@@ -15,6 +15,7 @@ from novelvideo.utils.source_language import (
     AssetLanguage,
     asset_language_instruction,
     detect_asset_language,
+    resolve_asset_language,
 )
 
 
@@ -83,7 +84,7 @@ def detect_seedance2_prompt_language(beat: dict[str, Any]) -> AssetLanguage:
         )
         if _text(beat.get(field))
     )
-    return detect_asset_language(source)
+    return resolve_asset_language(source)
 
 
 def _text(value: Any) -> str:

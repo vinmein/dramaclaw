@@ -37,6 +37,10 @@ def narration_style_label(style: str) -> str:
     entry = (
         NARRATION_STYLES.get(str(style or "").strip()) or NARRATION_STYLES[DEFAULT_NARRATION_STYLE]
     )
+    from novelvideo.utils.generation_language import generation_language
+
+    if generation_language() == "en":
+        return "First-person narration" if style == "first_person" else "Third-person narration"
     return entry["label"]
 
 
@@ -44,6 +48,14 @@ def narration_style_prompt(style: str) -> str:
     entry = (
         NARRATION_STYLES.get(str(style or "").strip()) or NARRATION_STYLES[DEFAULT_NARRATION_STYLE]
     )
+    from novelvideo.utils.generation_language import generation_language
+
+    if generation_language() == "en":
+        return (
+            "Read naturally in English, as an intimate first-person inner monologue."
+            if style == "first_person"
+            else "Read naturally in English, in a calm, objective third-person narration style."
+        )
     return entry["prompt"]
 
 

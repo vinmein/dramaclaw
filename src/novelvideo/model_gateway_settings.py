@@ -75,6 +75,10 @@ class EffectiveMediaRelayConfig:
     cloudinary_api_key: str = ""
     cloudinary_api_secret: str = ""
     cloudinary_folder: str = ""
+    s3_region: str = ""
+    s3_bucket: str = ""
+    s3_access_key_id: str = ""
+    s3_access_key_secret: str = ""
 
 
 @dataclass(frozen=True)
@@ -942,9 +946,17 @@ def save_media_relay_config(
     cloudinary_api_key: str = "",
     cloudinary_api_secret: str = "",
     cloudinary_folder: str = "",
+    s3_region: str = "",
+    s3_bucket: str = "",
+    s3_access_key_id: str = "",
+    s3_access_key_secret: str = "",
 ) -> None:
     _write_many(
         {
+            "s3_relay_region": str(s3_region or "").strip(),
+            "s3_relay_bucket": str(s3_bucket or "").strip(),
+            "s3_relay_access_key_id": str(s3_access_key_id or "").strip(),
+            "s3_relay_access_key_secret": str(s3_access_key_secret or "").strip(),
             "media_relay_provider": str(provider or "").strip().lower(),
             "media_relay_ttl_seconds": str(int(ttl_seconds)),
             "oss_relay_endpoint": str(endpoint or "").strip(),
@@ -1099,6 +1111,12 @@ def get_effective_media_relay_config(
             cloudinary_api_key=db_cloudinary_api_key,
             cloudinary_api_secret=db_cloudinary_api_secret,
             cloudinary_folder=db_cloudinary_folder,
+            s3_region=str(settings.get("s3_relay_region", "")).strip(),
+            s3_bucket=str(settings.get("s3_relay_bucket", "")).strip(),
+            s3_access_key_id=str(settings.get("s3_relay_access_key_id", "")).strip(),
+            s3_access_key_secret=str(
+                settings.get("s3_relay_access_key_secret", "")
+            ).strip(),
         )
 
     raw_ttl = (
@@ -1111,6 +1129,10 @@ def get_effective_media_relay_config(
     )
     return EffectiveMediaRelayConfig(
         source="environment",
+        s3_region=os.environ.get("S3_RELAY_REGION", "").strip(),
+        s3_bucket=os.environ.get("S3_RELAY_BUCKET", "").strip(),
+        s3_access_key_id=os.environ.get("S3_RELAY_AK", "").strip(),
+        s3_access_key_secret=os.environ.get("S3_RELAY_SK", "").strip(),
         provider=str(
             env_provider or os.environ.get("MEDIA_RELAY_PROVIDER", "aliyun_oss")
         )
@@ -1369,6 +1391,12 @@ def build_media_relay_status(
         and effective.cloudinary_api_key
         and effective.cloudinary_api_secret
     )
+    s3_configured = bool(
+        effective.s3_region
+        and effective.s3_bucket
+        and effective.s3_access_key_id
+        and effective.s3_access_key_secret
+    )
     return {
         "source": effective.source,
         "provider": effective.provider,
@@ -1381,8 +1409,14 @@ def build_media_relay_status(
         "cloudinaryApiKeyPreview": mask_secret(effective.cloudinary_api_key),
         "cloudinaryApiSecretPreview": mask_secret(effective.cloudinary_api_secret),
         "apiFolder": effective.cloudinary_folder,
+        "s3Region": effective.s3_region,
+        "s3Bucket": effective.s3_bucket,
+        "s3AccessKeyIdPreview": mask_secret(effective.s3_access_key_id),
+        "s3AccessKeySecretPreview": mask_secret(effective.s3_access_key_secret),
         "configured": (
-            cloudinary_configured
+            s3_configured
+            if effective.provider == "aws_s3"
+            else cloudinary_configured
             if effective.provider == "cloudinary"
             else aliyun_configured
         ),

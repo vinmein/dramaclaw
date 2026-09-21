@@ -536,7 +536,7 @@ async def test_freezone_audio_speech_drama_first_person_uses_project_narrator(
             "prompt": "画外音响起。",
             "audio_url": "data://voice.wav",
             "output_path": freezone_audio_speech_output_path(project_dir, "job-1"),
-            "emotion_prompt": "以第三人称旁白视角，用客观冷静的解说语气朗读",
+            "emotion_prompt": "Read naturally in English, in a calm, objective third-person narration style.",
         }
     ]
 

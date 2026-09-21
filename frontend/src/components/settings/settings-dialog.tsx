@@ -100,6 +100,7 @@ interface SettingsDialogProps {
 const MEDIA_STORAGE_PROVIDERS: MediaStorageProvider[] = [
   "aliyun_oss",
   "cloudinary",
+  "aws_s3",
 ];
 
 // Codex 本地桥接暂时隐藏（保留组件代码，后端就绪后改回 true 即可恢复）。
@@ -6198,13 +6199,15 @@ function MediaStorageSection() {
   const saveMediaRelay = useSaveMediaRelayConfig();
 
   const { provider, cloudinary, aliyunOss } = mediaStorage;
+  // Credentials stay in component memory and are cleared after saving.
+  const [s3, setS3] = useState({ region: "", bucket: "", accessKeyId: "", accessKeySecret: "" });
   const [ttlSeconds, setTtlSeconds] = useState("1800");
   const mediaRelayKey = JSON.stringify(mediaRelay ?? {});
   useEffect(() => {
     if (!mediaRelay) return;
     if (
       mediaRelay.provider === "aliyun_oss" ||
-      mediaRelay.provider === "cloudinary"
+      mediaRelay.provider === "cloudinary" || mediaRelay.provider === "aws_s3"
     ) {
       setProvider(mediaRelay.provider as MediaStorageProvider);
     }
@@ -6226,6 +6229,8 @@ function MediaStorageSection() {
           : {}),
       });
     }
+    setS3({ region: mediaRelay.s3Region ?? "", bucket: mediaRelay.s3Bucket ?? "",
+      accessKeyId: "", accessKeySecret: "" });
     if (mediaRelay.ttlSeconds) {
       setTtlSeconds((current) =>
         current === String(mediaRelay.ttlSeconds)
@@ -6248,9 +6253,19 @@ function MediaStorageSection() {
       toast.error(t("settings.mediaStorage.validation.ttlSeconds"));
       return;
     }
+    if (provider === "aws_s3" && (!Number.isInteger(ttl) || ttl > 604800)) {
+      toast.error(t("settings.mediaStorage.s3TtlError"));
+      return;
+    }
     try {
       const res = await saveMediaRelay.mutateAsync(
-        provider === "cloudinary"
+        provider === "aws_s3"
+          ? { provider: "aws_s3", ttlSeconds: ttl,
+              s3Region: s3.region.trim(), s3Bucket: s3.bucket.trim(),
+              ...(s3.accessKeyId.trim() ? { s3AccessKeyId: s3.accessKeyId.trim() } : {}),
+              ...(s3.accessKeySecret.trim() ? { s3AccessKeySecret: s3.accessKeySecret.trim() } : {}),
+            }
+          : provider === "cloudinary"
           ? {
               provider: "cloudinary",
               ttlSeconds: Math.trunc(ttl),
@@ -6280,13 +6295,15 @@ function MediaStorageSection() {
         toast.error(res.error);
         return;
       }
-      if (provider === "cloudinary") {
+      if (provider === "aws_s3") {
+        setS3((current) => ({ ...current, accessKeyId: "", accessKeySecret: "" }));
+      } else if (provider === "cloudinary") {
         updateCloudinary({ apiKey: "", apiSecret: "" });
       } else {
         updateAliyunOss({ accessKeyId: "", accessKeySecret: "" });
       }
       toast.success(
-        provider === "cloudinary"
+        provider === "aws_s3" ? t("settings.mediaStorage.s3SaveSuccess") : provider === "cloudinary"
           ? t("settings.mediaStorage.cloudinarySaveSuccess")
           : t("settings.mediaStorage.saveSuccess"),
       );
@@ -6320,7 +6337,7 @@ function MediaStorageSection() {
         ) : null}
         <span className="ml-1 rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
           {t("settings.mediaStorage.currentPlan")}:{" "}
-          {configuredProvider === "cloudinary"
+          {configuredProvider === "aws_s3" ? t("settings.mediaStorage.providerS3") : configuredProvider === "cloudinary"
             ? t("settings.mediaStorage.providerCloudinary")
             : t("settings.mediaStorage.providerAliyunOss")}
         </span>
@@ -6368,7 +6385,7 @@ function MediaStorageSection() {
           <TabsList>
             {MEDIA_STORAGE_PROVIDERS.map((p) => (
               <TabsTrigger key={p} value={p}>
-                {p === "aliyun_oss"
+                {p === "aws_s3" ? t("settings.mediaStorage.providerS3") : p === "aliyun_oss"
                   ? t("settings.mediaStorage.providerAliyunOss")
                   : t("settings.mediaStorage.providerCloudinary")}
               </TabsTrigger>
@@ -6378,7 +6395,22 @@ function MediaStorageSection() {
       </div>
 
       <div className="mt-4 space-y-2.5">
-        {provider === "cloudinary" ? (
+        {provider === "aws_s3" ? (
+          <>
+            <FieldRow name="s3-region" label={t("settings.mediaStorage.s3Region")}
+              value={s3.region} onChange={(region) => setS3((c) => ({ ...c, region }))} placeholder="ap-south-1" />
+            <FieldRow name="s3-bucket" label={t("settings.mediaStorage.fields.bucket")}
+              value={s3.bucket} onChange={(bucket) => setS3((c) => ({ ...c, bucket }))} placeholder="my-media-bucket" />
+            <FieldRow secret name="s3-access-key-id" label={t("settings.mediaStorage.fields.accessKeyId")}
+              value={s3.accessKeyId} onChange={(accessKeyId) => setS3((c) => ({ ...c, accessKeyId }))}
+              savedPreview={mediaRelay?.s3AccessKeyIdPreview ?? ""} />
+            <FieldRow secret name="s3-access-key-secret" label={t("settings.mediaStorage.s3SecretKey")}
+              value={s3.accessKeySecret} onChange={(accessKeySecret) => setS3((c) => ({ ...c, accessKeySecret }))}
+              savedPreview={mediaRelay?.s3AccessKeySecretPreview ?? ""} />
+            <FieldRow name="s3-ttl" label={t("settings.mediaStorage.fields.ttlSeconds")}
+              value={ttlSeconds} onChange={setTtlSeconds} />
+          </>
+        ) : provider === "cloudinary" ? (
           <CloudinaryFields
             config={cloudinary}
             onChange={updateCloudinary}
@@ -6400,7 +6432,7 @@ function MediaStorageSection() {
       <div className="mt-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            {provider === "cloudinary" ? (
+            {provider === "aws_s3" ? t("settings.mediaStorage.s3FieldsHint") : provider === "cloudinary" ? (
               <>
                 {t("settings.mediaStorage.cloudinaryFieldsHint")}{" "}
                 <a
@@ -6427,7 +6459,7 @@ function MediaStorageSection() {
           {saveMediaRelay.isPending ? (
             <Loader2 className="size-3.5 animate-spin" />
           ) : null}
-          {provider === "cloudinary"
+          {provider === "aws_s3" ? t("settings.mediaStorage.saveS3") : provider === "cloudinary"
             ? t("settings.mediaStorage.saveCloudinary")
             : t("settings.mediaStorage.save")}
         </Button>

@@ -10,6 +10,7 @@
  * a new store and include it in `src/lib/reset-region-state.ts`.
  */
 import { create } from "zustand";
+import { DEFAULT_LANGUAGE } from "@/i18n/languages";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { quotaSafeStateStorage } from "@/lib/localStorageQuota";
 import type { PikoAccessoryDisplayId } from "@/features/companion/piko-accessories";
@@ -123,7 +124,7 @@ function persistedCompanionPet(pet: AppState["companionPet"]): AppState["compani
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      language: "zh",
+      language: DEFAULT_LANGUAGE,
       theme: "dark",
       dashboardTab: "active",
       dashboardView: "card",

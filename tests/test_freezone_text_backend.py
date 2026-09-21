@@ -173,18 +173,18 @@ def test_build_freezone_story_script_task_mentions_required_columns() -> None:
         prompt="节奏要快，压迫感强",
     )
 
-    assert "镜号" in task
-    assert "画面描述" in task
-    assert "视频运动提示词" in task
-    assert "角色图1" in task
+    assert "shot number" in task
+    assert "visual description" in task
+    assert "video motion prompt" in task
+    assert "character_image_1" in task
     assert "沈昭昭" in task
     assert "节奏要快" in task
-    assert "括号分段" in task
-    assert "分镜提示词必须像高质量图像生成提示词" in task
-    assert "最好严格按 8 段写" in task
-    assert "最好严格按 6 段写" in task
-    assert "第二段尽量直接使用或轻改角色描述1" in task
-    assert "技术参数段尽量保留" in task
+    assert "bracketed sections" in task
+    assert "Make image and video prompts detailed enough" in task
+    assert "eight sections" in task
+    assert "six sections" in task
+    assert "Reuse the character card" in task
+    assert "retain camera settings" in task
 
 
 @pytest.mark.asyncio

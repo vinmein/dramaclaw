@@ -200,7 +200,9 @@ export const AudioNode = memo(({ id, data, selected, width, height }: AudioNodeP
       try {
         const res = await getCachedAudioReferences(project);
         if (cancelled) return;
-        const first = (res.available ?? [])[0];
+        const available = res.available ?? [];
+        const first = available.find((voice) => /^en(?:[-_]|$)|english/i.test(voice.language ?? ""))
+          ?? available[0];
         if (!first) {
           updateNodeData(id, {
             voiceAvailable: false,
